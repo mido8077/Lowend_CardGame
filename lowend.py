@@ -8,7 +8,6 @@ class Lowend:
     players = [[], [], []]
     names = []
     Totals=[]
-
     leftover = []
     cards = {
         "1": 4,
@@ -33,27 +32,14 @@ class Lowend:
 
     def __init__(self):
         while True:
-            x = int(input("Welcome to Lowend\n 1:Create Game       2:Join Game\n"))
-            if x == 1:
+            x = input("Welcome to Lowend\n 1:Create Game       2:Join Game\n")
+            if x == "1":
                 self.creategame()
-            elif x == 2:
+            elif x == "2":
                 self.joingame()
             else:
                 print("wrong input")
 
-    def joingame(self):
-
-        Host = input("enter the ip :\n")
-        Name = input("enter your name\n")
-        Port = 5050
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((Host, Port))
-        x=s.send(Name.encode())
-        while True:
-            x = s.recv(1024)
-            x = x.decode()
-            response = input(x)
-            y = s.send(response.encode())
 
     def creategame(self):
         self.names.append(input("Enter your name\n"))
@@ -81,8 +67,7 @@ class Lowend:
 
         num = self.randomcardgen()
         self.leftover.append(num)
-
-        Lowend = False
+        Endgame = False
         count = 0
         while True:
 
@@ -91,10 +76,10 @@ class Lowend:
                     + "your -------turn "
                     + "the leftover card is :  "
                     + str(self.leftover[-1])
-                    + "\n1: pick a card       2:swap card     3:match card       4:lowend\n"
+                    + "\n1: pick a card       2:swap a card     3:match acard       4:Endgame\n"
                 )
 
-                if Lowend == True:
+                if Endgame == True:
                     count += 1
                     if count > 3:
                         self.results()
@@ -102,20 +87,15 @@ class Lowend:
 
                 if i > 0:
 
-                    self.players[i - 1][0].send(turn_msg.encode())
-                    rec_msg = self.players[i - 1][0].recv(1024)
-                    rec_msg = rec_msg.decode()
-                    act = int(rec_msg)
+                    act = int(self.input2(i,turn_msg))
 
                     if act == 1:
                         num = self.randomcardgen()
                         turn_msg = (
                             "you picked " + str(num) + " \n 1:swap       2:return\n"
                         )
-                        self.players[i - 1][0].send(turn_msg.encode())
-                        rec_msg = self.players[i - 1][0].recv(1024)
-                        rec_msg = rec_msg.decode()
-                        act = int(rec_msg)
+
+                        act = int(self.input2(i,turn_msg))
 
                         if act == 1:
                             self.swap2(i, num)
@@ -129,16 +109,15 @@ class Lowend:
                     elif act == 3:
                         self.match(i)
                     elif act == 4:
-                        turn_msg = "lowend"
-
-                        Lowend = True
+                        turn_msg = "Endgame"
+                        Endgame = True
 
                 else:
                     print(f"your-------turn")
                     print("the leftover card is :", self.leftover[-1])
                     act = int(
                         input(
-                            "1: pick a card       2:swap card     3:match card       4:lowend\n"
+                            "1: pick a card       2:swap a card     3:match a card       4:Endgame\n"
                         )
                     )
 
@@ -157,8 +136,22 @@ class Lowend:
                     elif act == 3:
                         self.match(i)
                     elif act == 4:
-                        print("lowend")
-                        Lowend = True
+                        print("Endgame")
+                        Endgame = True
+
+    def joingame(self):
+
+        Host = input("enter the ip :\n")
+        Name = input("enter your name\n")
+        Port = 5050
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((Host, Port))
+        x=s.send(Name.encode())
+        while True:
+            x = s.recv(1024)
+            x = x.decode()
+            response = input(x)
+            y = s.send(response.encode())
 
     def special_Cards(self, i, num):
         self.leftover.append(num)
@@ -180,55 +173,54 @@ class Lowend:
         cardname = str(num)
         self.cards[cardname] -= 1
         return num
+    
     def ip_gen(self):
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
             try:
                 s.connect(("8.8.8.8", 80))
+                print(s.getsockname())
                 ip_address = s.getsockname()[0]
             finally:
                 s.close()
 
             return ip_address
-    def seeurcard(self,i):
-            if i > 0:
-                ranger = range(1, len(self.listarr[i]))
-                turn_msg = "enter a num form " + str(ranger)
-                self.players[i - 1][0].send(turn_msg.encode())
-                rec_msg = self.players[i - 1][0].recv(1024)
-                rec_msg = rec_msg.decode()
-                picked = "card [0] "+ str(int(rec_msg)-1)+" (press 1 then press enter)"
-                self.players[i - 1][0].send(self.listarr[i][picked].encode())
-                self.players[i - 1][0].send(turn_msg.encode())
-                rec_msg = self.players[i - 1][0].recv(1024)
+    
 
-            else:
-                ranger = range(1, len(self.listarr[i]))
-                picked = int(input(f"enter a num from {ranger}")) - 1
-                print(self.listarr[i][picked])
+    def swap1(self, i):
+        if i > 0:
+            ranger = range(1, len(self.listarr[i]))
+            picked = int(self.input2(i,("enter a num form " + str(ranger)+"\n"))) - 1
+            temp = self.leftover[-1]
+            self.leftover[-1] = self.listarr[i][picked]
+            self.listarr[i][picked] = temp
+        else:
+            ranger = range(1, len(self.listarr[i]))
+            picked = int(input(f"enter a num from {ranger} \n")) - 1
+            temp = self.leftover[-1]
+            self.leftover[-1] = self.listarr[i][picked]
+            self.listarr[i][picked] = temp
+
+    def swap2(self, i, num):
+        if i > 0:
+            ranger = range(1, len(self.listarr[i]))
+            turn_msg = "enter a num form " + str(ranger)+"\n"
+            picked = int(self.input2(i,("enter a num form " + str(ranger)+"\n"))) - 1
+            self.leftover.append(self.listarr[i][picked])
+            self.listarr[i][picked] = num
+        else:
+            ranger = range(1, len(self.listarr[i]))
+            picked = int(input(f"enter a num from {ranger}")) - 1
+            self.leftover.append(self.listarr[i][picked])
+            self.listarr[i][picked] = num
 
     def swap3(self, i):
         if i > 0:
-            turn_msg = "choose a player"
-            self.players[i - 1][0].send(turn_msg.encode())
-            rec_msg = self.players[i - 1][0].recv(1024)
-            rec_msg = rec_msg.decode()
-            pickplayer = int(rec_msg) - 1
-
+            pickplayer = int(self.input2(i,"choose a player")) - 1
             ranger = range(1, len(self.listarr[i]))
-            turn_msg = "enter a num from (your card)" + str(ranger)
-            self.players[i - 1][0].send(turn_msg.encode())
-            rec_msg = self.players[i - 1][0].recv(1024)
-            rec_msg = rec_msg.decode()
-            urcard = int(rec_msg) - 1
-
+            urcard = int(self.input2(i,("enter a num from "+ + str(ranger)+" (your card)"))) - 1
             ranger = range(1, len(self.listarr[pickplayer]))
-            turn_msg = "enter a num from (their card)" + str(ranger)
-            self.players[i - 1][0].send(turn_msg.encode())
-            rec_msg = self.players[i - 1][0].recv(1024)
-            rec_msg = rec_msg.decode()
-            theircard = int(rec_msg) - 1
-
+            theircard = int(self.input2(i,("enter a num from " + str(ranger)+" (their card)"))) - 1
             temp = self.listarr[i][urcard]
             self.listarr[i][urcard] = self.listarr[pickplayer][theircard]
             self.listarr[pickplayer][theircard] = temp
@@ -241,23 +233,25 @@ class Lowend:
             theircard = int(input()) - 1
             temp = self.listarr[i][urcard]
             self.listarr[i][urcard] = self.listarr[pickplayer][theircard]
-            self.listarr[pickplayer][theircard] = temp
+            self.listarr[pickplayer][theircard] = temp 
+
+    def seeurcard(self,i):
+            if i > 0:
+                ranger = range(1, len(self.listarr[i]))
+                picked = + int(self.input2(i,("enter a num form " + str(ranger))))-1
+                send = self.input2(i,("card is : "+self.listarr[i][picked]+"press any key then enter"))
+
+            else:
+                ranger = range(1, len(self.listarr[i]))
+                picked = int(input(f"enter a num from {ranger}")) - 1
+                print(self.listarr[i][picked])
 
     def seeothcard(self, i):
         if i > 0:
 
-            turn_msg = "choose a player" 
-            self.players[i - 1][0].send(turn_msg.encode())
-            rec_msg = self.players[i - 1][0].recv(1024)
-            rec_msg = rec_msg.decode()
-            pickplayer = int(rec_msg) - 1
-
+            pickplayer = int(self.input2(i,"choose a player")) - 1
             ranger = range(1, len(self.listarr[pickplayer]))
-            turn_msg = "enter a num from " + str(ranger)
-            self.players[i - 1][0].send(turn_msg.encode())
-            rec_msg = self.players[i - 1][0].recv(1024)
-            rec_msg = rec_msg.decode()
-            picked = int(rec_msg) - 1
+            picked = int(self.input2(i,("enter a num from " + str(ranger)))) - 1
             print(f"player {pickplayer} card is : {self.listarr[pickplayer][picked]}")
         else:
             pickplayer = int(input("choose the player"))
@@ -265,24 +259,37 @@ class Lowend:
             picked = int(input(f"enter a num from {ranger}")) - 1
             print(f"player {pickplayer} card is : {self.listarr[pickplayer][picked]}")
 
+    def lookaround(self, i):
+        if i > 0:
+            for j in len(range(self.listarr)):
+                ranger = range(1, len(self.listarr[i]))
+                picked = int(self.input2(i,("enter a num form " + str(ranger)+ "\n"))) - 1
+                self.players[i - 1][0].send(self.listarr[j][picked].encode())
+
+        else:
+            for j in len(range(self.listarr)):
+                ranger = range(1, len(self.listarr[i]))
+                picked = int(input("enter a num from ", ranger,"\n")) - 1
+                print(self.listarr[j][picked])
+                
     def match(self, i):
         if i > 0:
             ranger = range(1, len(self.listarr[i]))
-            turn_msg = "enter a num form " + str(ranger)
-            self.players[i - 1][0].send(turn_msg.encode())
-            rec_msg = self.players[i - 1][0].recv(1024)
-            rec_msg = rec_msg.decode()
-            picked = int(rec_msg) - 1
+            picked =int(self.input2(i,("enter a num form " + str(ranger)+"\n")))-1
+            
             if self.listarr[i][picked] == self.leftover[-1] or self.leftover[-1] == 12:
-                self.listarr[1].pop(picked)
-                print("match done")
+                self.listarr[i].pop(picked)
+                turn_msg="match done "
+                self.players[i - 1][0].send(turn_msg.encode())
             else:
                 self.listarr[i].append(self.leftover[-1])
                 self.leftover.pop(-1)
-                print("match failed")
+                turn_msg="match failed "
+                self.players[i - 1][0].send(turn_msg.encode())     
         else:
             ranger = range(1, len(self.listarr[i]))
-            picked = int(input(f"enter a num from {ranger}")) - 1
+            picked = int(input(f"enter a num from {ranger} \n")) - 1
+
             if self.listarr[i][picked] == self.leftover[-1] or self.leftover[-1] == 12:
                 self.listarr[1].pop(picked)
                 print("done")
@@ -290,57 +297,6 @@ class Lowend:
                 self.listarr[i].append(self.leftover[-1])
                 self.leftover.pop(-1)
                 print("match failed")
-
-    def swap1(self, i):
-        if i > 0:
-            ranger = range(1, len(self.listarr[i]))
-            turn_msg = "enter a num form " + str(ranger)
-            self.players[i - 1][0].send(turn_msg.encode())
-            rec_msg = self.players[i - 1][0].recv(1024)
-            rec_msg = rec_msg.decode()
-            picked = int(rec_msg) - 1
-            temp = self.leftover[-1]
-            self.leftover[-1] = self.listarr[i][picked]
-            self.listarr[i][picked] = temp
-        else:
-            ranger = range(1, len(self.listarr[i]))
-            picked = int(input(f"enter a num from {ranger}")) - 1
-            temp = self.leftover[-1]
-            self.leftover[-1] = self.listarr[i][picked]
-            self.listarr[i][picked] = temp
-
-    def swap2(self, i, num):
-        if i > 0:
-            ranger = range(1, len(self.listarr[i]))
-            turn_msg = "enter a num form " + str(ranger)
-            self.players[i - 1][0].send(turn_msg.encode())
-            rec_msg = self.players[i - 1][0].recv(1024)
-            rec_msg = rec_msg.decode()
-            picked = int(rec_msg) - 1
-            self.leftover.append(self.listarr[i][picked])
-            self.listarr[i][picked] = num
-        else:
-            ranger = range(1, len(self.listarr[i]))
-            picked = int(input(f"enter a num from {ranger}")) - 1
-            self.leftover.append(self.listarr[i][picked])
-            self.listarr[i][picked] = num
-
-    def lookaround(self, i):
-        if i > 0:
-            for j in len(range(self.listarr)):
-                ranger = range(1, len(self.listarr[i]))
-                turn_msg = "enter a num form " + str(ranger)
-                self.players[i - 1][0].send(turn_msg.encode())
-                rec_msg = self.players[i - 1][0].recv(1024)
-                rec_msg = rec_msg.decode()
-                picked = int(rec_msg) - 1
-                self.players[i - 1][0].send(self.listarr[j][picked].encode())
-
-        else:
-            for j in len(range(self.listarr)):
-                ranger = range(1, len(self.listarr[i]))
-                picked = int(input("enter a num from ", ranger)) - 1
-                print(self.listarr[j][picked])
 
     def results(self):
         for num in range(len(self.listarr)):
@@ -351,10 +307,16 @@ class Lowend:
             self.Totals.append(Total)
         for i in range(4):
             if i>0:
-                self.players[i-1][0].send(Total.encode())
+                self.players[i-1][0].send(str(self.Totals).encode())
                 self.players[i-1][0].close()
             else:
-                print(Total)
+                print(self.Totals)
+
+    def input2(self,i,msg):
+                self.players[i - 1][0].send(msg.encode())
+                rec_msg = self.players[i - 1][0].recv(1024)
+                rec_msg = rec_msg.decode()
+                return rec_msg
 
             
 
